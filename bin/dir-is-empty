@@ -1,0 +1,15 @@
+#!/usr/local/bin/zsh
+
+if [[ $# -ne 1 ]]; then
+   script=$(basename $0)
+
+   print -P "%B%F{white}$script%f%b"
+   echo ""
+   echo "Checks whether the given directory is empty"
+   echo ""
+   print -P "%F{yellow}Usage:%f $script <directory>"
+
+   exit 1
+fi
+
+[[ $(ls -1A "$1" 2>/dev/null | wc -l) -eq 0 ]]

@@ -1,0 +1,56 @@
+#!/usr/local/bin/zsh
+
+local vcsh_modules=$(ls -1 ~/.config/mr/config.d | xargs -n 1 basename -s .vcsh)
+
+if [[ $# -eq 0 ]]; then
+   if [[ -n "$vcsh_modules" ]]; then
+      echo "Available modules:\n\n${vcsh_modules}"
+   else
+      print -P "%F{red}No modules available %f"
+   fi
+
+   exit 0
+elif [[ $# -ne 1 ]]; then
+   script=$(basename $0)
+
+   print -P "%F{yellow}Usage:%f $script [<module>]"
+
+   exit 1
+fi
+
+local module=$1
+
+echo $vcsh_modules | grep "^$module$" >/dev/null
+
+if [[ $? -eq 0 ]]; then
+   local changes=$(vcsh $module status --porcelain 2>/dev/null | grep -v '^??' | wc -l)
+
+   if [[ $changes -ne 0 ]]; then 
+      print -P "%F{red}There are uncommitted changes:%f\n"
+      vcsh $module status -uno --long 
+      print -P "\n%F{red}Aborting...%f"
+
+      exit 0
+   fi
+
+   local files=$(vcsh $module ls-files 2>/dev/null)
+
+   echo $files | xargs -n1 rm -f
+   echo $files | xargs -n1 dirname \
+      | sort -u \
+      | grep -v '^\.$' \
+      | xargs -n1 dirnames \
+      | filter dir-is-empty \
+      | xargs -n1 rmdir
+
+   rm ~/.config/mr/config.d/$module.vcsh 
+   rm -rf ~/.config/vcsh/repo.d/$module.git
+else
+   ls -1 ~/.config/mr/available.d | xargs -n 1 basename -s ".vcsh" | grep "^$module$" >/dev/null
+
+   if [[ $? -eq 0 ]]; then
+      echo "$module is already disabled"
+   else
+      print -P "%F{red}Unknown module: $module%f"
+   fi
+fi

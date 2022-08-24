@@ -1,0 +1,30 @@
+#!/usr/local/bin/zsh
+
+if [[ $# -ne 1 ]]; then
+   script=$(basename $0)
+
+   print -P "%B%F{white}$script%f%b"
+   echo ""
+   echo "Lists all paths up to the given directory or "
+   echo "the parent of the given file in reverse order"
+   echo ""
+   print -P "%F{yellow}Usage:%f $script <path>"
+
+   exit 1
+fi
+
+file="$1"
+
+if [[ -f "$file" ]]; then
+   dirnames $(dirname "$file")
+elif [[ -d "$file" ]]; then
+   if [[ "$file" = "." || "$file" = "/" ]]; then
+      return
+   else
+      echo "$file"
+      dirnames $(dirname "$file")
+   fi
+else
+   echo "Invalid path given: $file"
+   exit 1
+fi
