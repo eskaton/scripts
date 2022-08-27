@@ -1,7 +1,9 @@
 #!/usr/local/bin/zsh
 
-for module in $(vcsh list); do
-   local url=$(vcsh $module remote -v | grep '(fetch)' | awk '{print $2}' | sed 's|https://\([^/]*\)/\(.*\)$|git@\1:\2|')
+for vcsh_module in $(vcsh list); do
+   git_url=$(vcsh $vcsh_module config --get remote.origin.url | sed -n 's|^https://\([^/]*\)/\(.*\)$|git@\1:\2|p')
 
-   vcsh $module remote set-url --add --push origin $url
+   if [[ -n "$git_url" ]]; then
+      vcsh $vcsh_module remote set-url --add --push origin $git_url
+   fi
 done
