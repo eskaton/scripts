@@ -1,4 +1,4 @@
-#!/usr/local/bin/zsh
+#!/usr/bin/env zsh
 
 local vcsh_modules=$(ls -1 ~/.config/mr/config.d | xargs -n 1 basename -s .vcsh)
 

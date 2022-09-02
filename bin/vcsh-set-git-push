@@ -1,4 +1,4 @@
-#!/usr/local/bin/zsh
+#!/usr/bin/env zsh
 
 for vcsh_module in $(vcsh list); do
    git_url=$(vcsh $vcsh_module config --get remote.origin.url | sed -n 's|^https://\([^/]*\)/\(.*\)$|git@\1:\2|p')
