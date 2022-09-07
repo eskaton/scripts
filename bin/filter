@@ -1,0 +1,21 @@
+#!/usr/bin/env zsh
+
+if [[ $# -ne 1 ]]; then
+   script=$(basename $0)
+
+   print -P "%B%F{white}$script%f%b"
+   echo ""
+   echo "Filters lines from <stdin> with a predicate"
+   echo ""
+   print -P "%F{yellow}Usage:%f $script <predicate>"
+
+   exit 1
+else
+   predicate=$1
+fi
+
+while read line; do
+   if $predicate "$line"; then
+      echo "$line"
+   fi
+done
