@@ -1,0 +1,27 @@
+#!/usr/bin/zsh
+
+script_home=$(dirname $(readlink -f $0))
+config_file=~/etc/kcctl/config.json
+
+. ~/.funcs
+. $script_home/common.inc
+. $script_home/wrapper.inc
+
+wrapper::process_args $0 $@
+
+if [[ $# -eq 0 ]]; then
+   wrapper::usage $0
+else
+   env=$1
+   config=$(wrapper::get_env $env)
+
+   if [[ $? -ne 0 ]]; then
+      exit 1
+   fi
+
+   url=$(echo "$config" | jq -r '.url')
+
+   shift
+
+   ~/go/bin/kcctl -u $url $@
+fi
