@@ -3,6 +3,12 @@
 script_home=$(dirname $(readlink -f $0))
 config_file=~/etc/milena/config.json
 
+template='{
+  "brokers": [
+    ""
+  ]
+}'
+
 . ~/.funcs
 . $script_home/common.inc
 . $script_home/wrapper.inc
