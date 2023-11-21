@@ -20,8 +20,18 @@ else
    fi
 
    url=$(echo "$config" | jq -r '.url')
+   user=$(echo "$config" | jq -r '.user // empty')
+   password=$(echo "$config" | jq -r '.password // empty')
+
+   if [[ -n "$user" ]]; then
+      user_arg="--user $user"
+   fi
+
+   if [[ -n "$password" ]]; then
+      password_arg="--password $(sub_pass <(echo "$password"))"
+   fi
 
    shift
 
-   ~/go/bin/kcctl -u $url $@
+   ~/go/bin/kcctl -u $url $(echo $user_arg) $(echo $password_arg) $@
 fi
