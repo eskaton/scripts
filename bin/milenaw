@@ -6,7 +6,10 @@ config_file=~/etc/milena/config.json
 template='{
   "brokers": [
     ""
-  ]
+  ],
+  "properties" {
+    "key": "value"
+  }
 }'
 
 . ~/.funcs
@@ -26,8 +29,13 @@ else
    fi
 
    brokers=$(echo "$config" | jq -r '.brokers | join(",")')
+   properties=$(echo "$config" | jq -r '(.properties // empty |to_entries[]) | .key + "=" + .value')
 
    shift
 
-   ~/.cargo/bin/milena $@ -b $brokers --extra-properties-file <(sub_pass ~/etc/milena/cmd-$env.properties)
+   if [[ -n "$properties" ]]; then
+      ~/.cargo/bin/milena $@ -b $brokers --extra-properties-file <(sub_pass <(echo $properties))
+   else
+      ~/.cargo/bin/milena $@ -b $brokers 
+   fi
 fi
