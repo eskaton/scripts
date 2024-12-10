@@ -140,7 +140,7 @@ function wrapper::add_env {
    env=$1
    template=$2
 
-   if wrapper::list_env | grep $env >/dev/null 2>&1; then
+   if wrapper::list_env | grep "^$env$" >/dev/null 2>&1; then
       error "Environment $env already exists"
    fi
 
@@ -168,11 +168,11 @@ function wrapper::copy_env {
    env=$1
    new_env=$2
 
-   if ! wrapper::list_env | grep $env >/dev/null 2>&1; then
+   if ! wrapper::list_env | grep "^$env$" >/dev/null 2>&1; then
       error "Environment $env doesn't exists"
    fi
 
-   if wrapper::list_env | grep $new_env >/dev/null 2>&1; then
+   if wrapper::list_env | grep "^$new_env$" >/dev/null 2>&1; then
       error "Environment $new_env already exists"
    fi
 
@@ -199,7 +199,7 @@ function wrapper::copy_env {
 function wrapper::delete_env {
    env=$1
 
-   if ! wrapper::list_env | grep $env >/dev/null 2>&1; then
+   if ! wrapper::list_env | grep "^$env$" >/dev/null 2>&1; then
       error "Environment $env doesn't exists"
    fi
 

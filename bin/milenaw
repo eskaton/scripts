@@ -30,12 +30,25 @@ else
 
    brokers=$(echo "$config" | jq -r '.brokers | join(",")')
    properties=$(echo "$config" | jq -r '(.properties // empty |to_entries[]) | .key + "=" + .value')
+   proxy=$(echo "$config" | jq '.proxy // empty')
+   proxy_start=$(echo "$proxy" | jq -r '.start // empty')
+   proxy_stop=$(echo "$proxy" | jq -r '.stop // empty')
 
    shift
 
+   if [[ -n "$proxy_start" ]]; then
+      $proxy_start >/dev/null 2>&1
+   fi
+
    if [[ -n "$properties" ]]; then
+#      echo ~/.cargo/bin/milena $@ -b $brokers --extra-properties-file <(sub_pass <(echo $properties))
+#      cat <(sub_pass <(echo $properties))
       ~/.cargo/bin/milena $@ -b $brokers --extra-properties-file <(sub_pass <(echo $properties))
    else
       ~/.cargo/bin/milena $@ -b $brokers 
+   fi
+
+   if [[ -n "$proxy_stop" ]]; then
+      $proxy_stop >/dev/null 2>&1
    fi
 fi

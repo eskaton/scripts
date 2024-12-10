@@ -1,5 +1,24 @@
 #!/usr/bin/env zsh
 
+function execute_cmd() {
+   cmd_name=$1
+   shift
+
+   if [[ -n "$cmd_name" ]]; then
+      cmd=$(command -v "$cmd_name")
+
+      if [[ -z "$cmd" ]]; then
+         error "$cmd_name: command not found"
+      fi
+
+      if ! $cmd $@ >/dev/null 2>&1; then
+	  return 1
+      fi
+   fi
+
+   return 0
+}
+
 script_home=$(dirname $(readlink -f $0))
 config_file=~/etc/kcctl/config.json
 
@@ -28,6 +47,10 @@ else
    url=$(echo "$config" | jq -r '.url')
    user=$(echo "$config" | jq -r '.user // empty')
    password=$(echo "$config" | jq -r '.password // empty')
+   proxy=$(echo "$config" | jq '.proxy // empty')
+   proxy_start=$(echo "$proxy" | jq -r '.start // empty')
+   proxy_stop=$(echo "$proxy" | jq -r '.stop // empty')
+   proxy_args=$(echo "$proxy" | jq -r '.args // empty')
 
    if [[ -n "$user" ]]; then
       user_arg="--user $user"
@@ -39,5 +62,11 @@ else
 
    shift
 
+   execute_cmd "$proxy_start" $(echo $proxy_args) || \
+       error "Failed to start proxy"
+
    ~/go/bin/kcctl -u $url $(echo $user_arg) $(echo $password_arg) $@
+
+   execute_cmd "$proxy_stop" $(echo $proxy_args) || \
+       error "Failed to stop proxy"
 fi
