@@ -9,11 +9,11 @@ opt_completion=("completion" "<SHELL>" "Generate shell completion" "zsh")
 opt_list_env=("list-env" "" "List valid environments" "")
 opt_get_env=("get-env" "<ENVIRONMENT>" "Show an environment" "\$env")
 opt_edit_env=("edit-env" "<ENVIRONMENT>" "Edit an environment" "\$env")
-opt_add_env=("add-env" "<ENVIRONMENT>" "Add a new environment" "\$env")
-opt_copy_env=("copy-env" "<EXISTING> <NEW>" "Copy an environment" "\$env")
+opt_add_env=("add-env" "" "Add a new environment" "\$env")
+opt_copy_env=("copy-env" "<ENVIRONMENT>" "Copy an environment" "\$env")
 opt_delete_env=("delete-env" "<ENVIRONMENT>" "Delete an environment" "\$env")
 
-all_options=("opt_help" "opt_completion" "opt_list_env" "opt_get_env" "opt_get_env" "opt_edit_env" "opt_add_env" "opt_copy_env" "opt_delete_env")
+all_options=("opt_help" "opt_completion" "opt_list_env" "opt_get_env" "opt_edit_env" "opt_add_env" "opt_copy_env" "opt_delete_env")
 
 function wrapper::usage {
 
@@ -57,44 +57,72 @@ function wrapper::completion {
 
    program=$(echo $wrapper | sed 's/.$//')
 
-   comp_opts=$(for i in $all_options; do
+   all_commands=$(for i in $all_options; do 
       opt=$(eval echo \$$i"[1]")
       text=$(eval echo \$$i"[3]")
-      comp=$(eval echo \$$i"[4]")
 
-      if [[ -z "$comp" ]]; then
-         printf "      \"--%s:[%s]\" " $opt "$text"
-      else
-         printf "      \"--%s:[%s]:(%s)\" " $opt "$text" "$comp"
+      printf "        '--${opt}:${text}'\n"
+   done)
+
+   commands_with_env=$(for i in $all_options; do
+      opt=$(eval echo \$$i"[1]")
+      env=$(eval echo \$$i"[2]")
+
+      if [[ "$env" = "<ENVIRONMENT>" ]]; then
+         printf "--${opt}|"
       fi
-
-      done)
+   done | sed 's/.$//')
 
 cat <<_END_
+# syntax=zsh
+
 #compdef _$wrapper $wrapper
 
 function _$wrapper {
-   local line 
+   local -a environments
+   local -a commands
 
-   env=\$(${wrapper} --list-env | tr '\n' ' ')
+   environments=(\$(${wrapper} --list-env 2>/dev/null))
+   commands=(
+$all_commands
+   )
 
-   function _environments {
-      local -a environments
-      environments=(\$(echo \$env))
-      _describe 'environment' environments
-   } 
+   if (( CURRENT > 2 )) && [[ " \${environments[@]} " =~ "\${words[2]}" ]]; then
+      words=("\${words[@]:1}")
+      words[1]="$(echo $wrapper | sed 's/.$//')"
+      (( CURRENT -= 1 ))
+      _${program} && return 0
+   fi  
 
    _arguments -C \\
-      "1: :_environments" \\
-      "*::arg:->args" \\
-      + '(opt)' \\
-$comp_opts
+      '1:environment or command:->first' \\
+      '*::args:->rest' \\
+     && return 0
 
-   if [[ -n "\$line[1]" ]]; then
-      line[1]="$program"
-      words[1]="$program"
-      _$program
-   fi
+   local state=\$state
+
+   case \$state in  
+      first) 
+         if [[ -n \$environments ]]; then
+            _describe -t environments 'Environments' environments
+         fi  
+
+         _describe -t commands 'Commands' commands
+         ;;  
+
+      rest)
+         case "\${words[1]}" in
+             $commands_with_env)
+                 if (( CURRENT == 2 )); then
+                    _describe -t environments 'Environments' environments
+                 fi  
+                 ;;  
+             *)  
+                 return 0
+                 ;;
+         esac
+        ;;
+   esac
 }
 _END_
 }
