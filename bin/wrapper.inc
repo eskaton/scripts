@@ -80,9 +80,11 @@ cat <<_END_
 
 function _$wrapper {
    local -a environments
+   local -a shells
    local -a commands
 
    environments=(\$(${wrapper} --list-env 2>/dev/null))
+   shells=("zsh")
    commands=(
 $all_commands
    )
@@ -117,6 +119,11 @@ $all_commands
                     _describe -t environments 'Environments' environments
                  fi  
                  ;;  
+             --completion)
+                  if (( CURRENT == 2 )); then
+                    _describe -t shells 'Shells' shells
+                 fi
+                 ;;
              *)  
                  return 0
                  ;;
