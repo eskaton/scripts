@@ -28,27 +28,43 @@ else
       exit 1
    fi
 
+   brokerlb=$(echo "$config" | jq -r '.brokerlb // empty')
    brokers=$(echo "$config" | jq -r '.brokers | join(",")')
    properties=$(echo "$config" | jq -r '(.properties // empty |to_entries[]) | .key + "=" + .value')
    proxy=$(echo "$config" | jq '.proxy // empty')
    proxy_start=$(echo "$proxy" | jq -r '.start // empty')
    proxy_stop=$(echo "$proxy" | jq -r '.stop // empty')
+   proxy_server=$(echo "$proxy" | jq -r '.server // empty')
+   proxy_user=$(echo "$proxy" | jq -r '.user // empty')
+   proxy_baseip=$(echo "$proxy" | jq -r '.baseip // empty')
 
    shift
 
-   if [[ -n "$proxy_start" ]]; then
-      $proxy_start >/dev/null 2>&1
+   if [[ -n "$brokerlb" ]]; then
+      bootstrap=$brokerlb
+   else
+      bootstrap=$brokers
    fi
 
+   if [[ -n "$proxy_start" ]]; then
+      if [[ -n "$brokerlb" && -n "$brokers" ]]; then
+         all_brokers="${brokerlb},${brokers}"
+      else
+         all_brokers="${brokerlb}${brokers}"
+      fi
+
+      overrides=$(eval $proxy_start $proxy_baseip $proxy_user@$proxy_server $all_brokers)
+   fi
+
+   overrides=${overrides:+-r $overrides}
+
    if [[ -n "$properties" ]]; then
-#      echo ~/.cargo/bin/milena $@ -b $brokers --extra-properties-file <(sub_pass <(echo $properties))
-#      cat <(sub_pass <(echo $properties))
-      ~/.cargo/bin/milena $@ -b $brokers --extra-properties-file <(sub_pass <(echo $properties))
+      ~/.cargo/bin/milena $@ -b $bootstrap --extra-properties-file <(sub_pass <(echo $properties)) $(echo $overrides)
    else
-      ~/.cargo/bin/milena $@ -b $brokers 
+      ~/.cargo/bin/milena $@ -b $bootstrap $(echo $overrides)
    fi
 
    if [[ -n "$proxy_stop" ]]; then
-      $proxy_stop >/dev/null 2>&1
+      $proxy_stop $proxy_baseip $proxy_user@$proxy_server $all_brokers >/dev/null 2>&1
    fi
 fi
